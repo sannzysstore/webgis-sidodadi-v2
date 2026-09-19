@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Network Analysis Desa Sidodadi | Geomatika</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Grid geospasial */
+    .geo-grid {
+      background-size: 40px 40px;
+      background-image:
+        linear-gradient(
+          to right,
+          rgba(255, 255, 255, 0.06) 1px,
+          transparent 1px
+        ),
+        linear-gradient(
+          to bottom,
+          rgba(255, 255, 255, 0.06) 1px,
+          transparent 1px
+        );
+    }
+
+    /* Transisi halaman */
+    #welcome-screen {
+      transition:
+        opacity 0.5s ease,
+        transform 0.5s ease,
+        visibility 0.5s;
+    }
+
+    #welcome-screen.hidden-screen {
+      opacity: 0;
+      transform: scale(1.03);
+      visibility: hidden;
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body class="text-slate-100 font-sans overflow-x-hidden overflow-y-auto">
+    
+  <!-- ========================================== -->
+  <!-- HALAMAN PEMBUKA -->
+  <!-- ========================================== -->
+
+  <div
+  id="welcome-screen"
+  class="relative min-h-screen flex flex-col justify-between geo-grid px-6 py-8 sm:px-12"
+    style="
+      background:
+        linear-gradient(
+          rgba(15, 23, 42, 0.45),
+          rgba(15, 23, 42, 0.65)
+        ),
+        url('https://thumb.viva.id/vivalampung/665x374/2026/02/13/698eaa449a6b6-institut-teknologi-sumatera_lampung.jpg');
+
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    "
+  >
+
+    <!-- Header -->
+    <header class="flex items-center justify-between max-w-6xl mx-auto w-full">
+
+      <div class="flex items-center gap-3">
+
+        <div class="p-2.5 bg-blue-600/20 border border-blue-500/30 rounded-xl text-blue-400">
+          <i data-lucide="map-pin" class="w-6 h-6"></i>
+        </div>
+
+        <div>
+          <h1 class="text-base font-semibold tracking-wide text-white">
+            Geomatika WebGIS
+          </h1>
+
+          <p class="text-xs text-slate-300">
+            Capstone Project 2026
+          </p>
+        </div>
+
+      </div>
+
+      <span
+        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
+      >
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        Sistem Aktif
+      </span>
+
+    </header>
+
+
+    <!-- ========================================== -->
+    <!-- KONTEN UTAMA -->
+    <!-- ========================================== -->
+
+    <main
+      class="max-w-4xl mx-auto text-center my-auto flex flex-col items-center"
+    >
+
+      <!-- Label -->
+      <div
+        class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-blue-300/40 bg-blue-500/20 text-blue-100 text-xs font-medium mb-6 backdrop-blur-sm"
+      >
+        <i
+          data-lucide="compass"
+          class="w-4 h-4 text-blue-300"
+        ></i>
+
+        Sistem Informasi Geografis & Jaringan
+      </div>
+
+
+      <!-- Judul -->
+      <h2
+        class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight mb-4 drop-shadow-lg"
+      >
+        Network Analysis & Aksesibilitas
+        <br />
+
+        <span
+          class="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-indigo-300"
+        >
+          Desa Sidodadi
+        </span>
+      </h2>
+
+
+      <!-- Deskripsi -->
+      <p
+        class="text-slate-200 text-sm sm:text-base max-w-2xl leading-relaxed mb-8 drop-shadow"
+      >
+        Platform interaktif untuk visualisasi jaringan jalan,
+        pemodelan rute terpendek antar fasilitas publik,
+        serta pemantauan statistik konektivitas wilayah secara spasial.
+      </p>
+
+
+      <!-- Tombol -->
+      <button
+        onclick="enterDashboard()"
+        class="group relative inline-flex items-center gap-3 px-8 py-3.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/30 transition-all duration-200 hover:scale-[1.02] active:scale-95 cursor-pointer"
+      >
+
+        <span>
+          Buka Dashboard & Peta WebGIS
+        </span>
+
+        <i
+          data-lucide="arrow-right"
+          class="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1"
+        ></i>
+
+      </button>
+
+
+      <!-- ========================================== -->
+      <!-- INFO SINGKAT -->
+      <!-- ========================================== -->
+
+      <div
+        class="grid grid-cols-3 gap-4 mt-12 w-full max-w-xl text-left"
+      >
+
+        <!-- Rute -->
+        <div
+          class="p-4 rounded-xl bg-slate-900/65 border border-white/20 backdrop-blur-md shadow-lg"
+        >
+
+          <p class="text-xs text-slate-300 mb-1">
+            Rute Spasial
+          </p>
+
+          <p
+            class="text-sm font-medium text-white flex items-center gap-1"
+          >
+            <i
+              data-lucide="route"
+              class="w-3.5 h-3.5 text-blue-300"
+            ></i>
+
+            Optimal
+          </p>
+
+        </div>
+
+
+        <!-- Data -->
+        <div
+          class="p-4 rounded-xl bg-slate-900/65 border border-white/20 backdrop-blur-md shadow-lg"
+        >
+
+          <p class="text-xs text-slate-300 mb-1">
+            Cakupan Data
+          </p>
+
+          <p
+            class="text-sm font-medium text-white flex items-center gap-1"
+          >
+            <i
+              data-lucide="layers"
+              class="w-3.5 h-3.5 text-indigo-300"
+            ></i>
+
+            Multilayer
+          </p>
+
+        </div>
+
+
+        <!-- Peta -->
+        <div
+          class="p-4 rounded-xl bg-slate-900/65 border border-white/20 backdrop-blur-md shadow-lg"
+        >
+
+          <p class="text-xs text-slate-300 mb-1">
+            Basis Peta
+          </p>
+
+          <p
+            class="text-sm font-medium text-white flex items-center gap-1"
+          >
+            <i
+              data-lucide="map"
+              class="w-3.5 h-3.5 text-emerald-300"
+            ></i>
+
+            QGIS & Leaflet
+          </p>
+
+        </div>
+
+      </div>
+
+    </main>
+
+
+    <!-- ========================================== -->
+    <!-- FOOTER -->
+    <!-- ========================================== -->
+
+    <footer class="text-center text-xs text-slate-300 drop-shadow">
+      &copy; 2026 Teknik Geomatika • Analisis Jaringan & Aksesibilitas Wilayah
+    </footer>
+
+  </div>
+
+    <!-- ========================================== -->
+  <!-- INFORMASI WEBGIS -->
+  <!-- ========================================== -->
+
+  <section
+    id="informasi-webgis"
+    class="relative bg-slate-950 px-6 py-20 sm:px-12"
+  >
+
+    <div class="max-w-5xl mx-auto">
+
+      <!-- JUDUL -->
+      <div class="text-center mb-16">
+
+        <div
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-300 text-xs font-medium mb-5"
+        >
+          <i data-lucide="map" class="w-4 h-4"></i>
+          INFORMASI WEBGIS
+        </div>
+
+        <h2
+          class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight"
+        >
+          WEBGIS ANALISIS AKSESIBILITAS
+          <br class="hidden sm:block">
+          INFRASTRUKTUR DASAR
+        </h2>
+
+        <p class="mt-4 text-blue-400 font-medium">
+          Desa Sidodasi, Kabupaten Pesawaran
+        </p>
+
+        <p
+          class="max-w-3xl mx-auto mt-6 text-slate-400 leading-relaxed text-sm sm:text-base"
+        >
+          Jelajahi kondisi aksesibilitas infrastruktur dasar di Desa Sidodasi
+          melalui peta interaktif berbasis jaringan jalan. WebGIS ini
+          menyajikan informasi mengenai persebaran infrastruktur, jaringan
+          jalan, serta hasil analisis jarak dan keterjangkauan suatu lokasi
+          berdasarkan jaringan jalan yang tersedia.
+        </p>
+
+      </div>
+
+
+      <!-- TENTANG WEBGIS -->
+      <div
+        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8"
+      >
+
+        <h3 class="text-xl font-bold text-white mb-5">
+          TENTANG WEBGIS
+        </h3>
+
+        <div
+          class="space-y-4 text-sm sm:text-base text-slate-400 leading-relaxed"
+        >
+
+          <p>
+            WebGIS Analisis Aksesibilitas Infrastruktur Dasar merupakan
+            platform pemetaan berbasis web yang dikembangkan untuk menyajikan
+            informasi spasial mengenai persebaran infrastruktur dasar dan
+            aksesibilitasnya di Desa Sidodasi, Kabupaten Pesawaran.
+          </p>
+
+          <p>
+            WebGIS ini menggunakan jaringan jalan sebagai dasar dalam
+            melakukan analisis aksesibilitas. Dengan pendekatan berbasis
+            jaringan, jarak dihitung berdasarkan jalur perjalanan yang
+            tersedia pada jaringan jalan, sehingga dapat memberikan gambaran
+            keterjangkauan lokasi yang lebih sesuai dengan kondisi jaringan
+            transportasi di wilayah kajian.
+          </p>
+
+          <p>
+            Melalui peta interaktif, pengguna dapat melihat persebaran
+            infrastruktur, jaringan jalan, serta hasil analisis aksesibilitas
+            secara visual. Informasi tersebut disajikan dengan tampilan yang
+            sederhana dan mudah dipahami sehingga dapat digunakan oleh
+            masyarakat umum, mahasiswa, maupun pengguna yang membutuhkan
+            informasi spasial mengenai wilayah Desa Sidodasi.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <!-- TUJUAN & WILAYAH KAJIAN -->
+      <div class="grid md:grid-cols-2 gap-8 mb-8">
+
+        <div
+          class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8"
+        >
+
+          <h3 class="text-xl font-bold text-white mb-5">
+            TUJUAN
+          </h3>
+
+          <p class="text-sm sm:text-base text-slate-400 leading-relaxed">
+            WebGIS ini dikembangkan untuk menyajikan informasi spasial
+            mengenai kondisi jaringan jalan dan persebaran infrastruktur
+            dasar, menganalisis tingkat aksesibilitas berdasarkan jarak
+            jaringan jalan, serta menyajikan hasil analisis dalam bentuk
+            peta interaktif yang mudah dipahami.
+          </p>
+
+        </div>
+
+
+        <div
+          class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8"
+        >
+
+          <h3 class="text-xl font-bold text-white mb-5">
+            WILAYAH KAJIAN
+          </h3>
+
+          <p class="text-sm sm:text-base text-slate-400 leading-relaxed">
+            Wilayah kajian dalam WebGIS ini adalah Desa Sidodasi, Kabupaten
+            Pesawaran, Provinsi Lampung. Data yang ditampilkan mencakup
+            jaringan jalan, lokasi infrastruktur, serta hasil analisis
+            aksesibilitas berdasarkan data spasial yang telah diolah.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <!-- ANALISIS AKSESIBILITAS -->
+      <div
+        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8"
+      >
+
+        <h3 class="text-xl font-bold text-white mb-5">
+          ANALISIS AKSESIBILITAS
+        </h3>
+
+        <div
+          class="space-y-4 text-sm sm:text-base text-slate-400 leading-relaxed"
+        >
+
+          <p>
+            Analisis aksesibilitas dilakukan dengan menggunakan jaringan
+            jalan sebagai dasar perhitungan jarak. Berbeda dengan jarak lurus
+            antara dua lokasi, analisis berbasis jaringan mempertimbangkan
+            jalur yang tersedia pada jaringan jalan untuk memperoleh nilai
+            jarak perjalanan.
+          </p>
+
+          <p>
+            Hasil analisis kemudian divisualisasikan dalam bentuk peta dengan
+            gradasi warna. Perbedaan warna menunjukkan variasi nilai
+            aksesibilitas atau jarak jaringan pada wilayah kajian.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <!-- CARA MEMBACA PETA -->
+      <div
+        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8"
+      >
+
+        <h3 class="text-xl font-bold text-white mb-5">
+          CARA MEMBACA PETA
+        </h3>
+
+        <p
+          class="text-sm sm:text-base text-slate-400 leading-relaxed"
+        >
+          Warna pada peta digunakan untuk menunjukkan perbedaan nilai jarak
+          jaringan. Secara umum, warna dengan nilai yang lebih rendah
+          menunjukkan lokasi yang relatif lebih dekat atau lebih mudah
+          dijangkau dari titik infrastruktur yang dianalisis, sedangkan nilai
+          yang lebih tinggi menunjukkan lokasi yang relatif lebih jauh
+          berdasarkan jaringan jalan.
+        </p>
+
+        <p
+          class="mt-5 text-sm text-blue-300"
+        >
+          Gunakan legenda pada peta sebagai acuan untuk mengetahui rentang
+          nilai pada setiap warna.
+        </p>
+
+      </div>
+
+
+      <!-- JARINGAN JALAN -->
+      <div
+        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8"
+      >
+
+        <h3 class="text-xl font-bold text-white mb-5">
+          JARINGAN JALAN
+        </h3>
+
+        <div
+          class="space-y-4 text-sm sm:text-base text-slate-400 leading-relaxed"
+        >
+
+          <p>
+            Jaringan jalan merupakan komponen utama dalam analisis
+            aksesibilitas pada WebGIS ini. Jaringan tersebut digunakan sebagai
+            jalur perhitungan untuk mengetahui jarak antara titik
+            infrastruktur dengan lokasi lainnya.
+          </p>
+
+          <p>
+            Dengan menggunakan pendekatan jaringan jalan, analisis tidak
+            hanya melihat jarak secara langsung, tetapi juga mempertimbangkan
+            konektivitas dan jalur perjalanan yang tersedia.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <!-- FITUR WEBGIS -->
+      <div
+        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8"
+      >
+
+        <h3 class="text-xl font-bold text-white mb-6">
+          FITUR WEBGIS
+        </h3>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+          <div
+            class="p-5 rounded-xl bg-slate-950/60 border border-slate-800"
+          >
+            <h4 class="font-semibold text-white mb-2">
+              Peta Interaktif
+            </h4>
+
+            <p class="text-sm text-slate-400 leading-relaxed">
+              Menampilkan wilayah kajian dan berbagai informasi spasial yang
+              dapat diperbesar, diperkecil, serta dijelajahi secara interaktif.
+            </p>
+          </div>
+
+
+          <div
+            class="p-5 rounded-xl bg-slate-950/60 border border-slate-800"
+          >
+            <h4 class="font-semibold text-white mb-2">
+              Jaringan Jalan
+            </h4>
+
+            <p class="text-sm text-slate-400 leading-relaxed">
+              Menampilkan jaringan jalan yang digunakan sebagai dasar dalam
+              analisis aksesibilitas.
+            </p>
+          </div>
+
+
+          <div
+            class="p-5 rounded-xl bg-slate-950/60 border border-slate-800"
+          >
+            <h4 class="font-semibold text-white mb-2">
+              Infrastruktur
+            </h4>
+
+            <p class="text-sm text-slate-400 leading-relaxed">
+              Menampilkan lokasi titik-titik infrastruktur yang menjadi bagian
+              dari data kajian.
+            </p>
+          </div>
+
+
+          <div
+            class="p-5 rounded-xl bg-slate-950/60 border border-slate-800"
+          >
+            <h4 class="font-semibold text-white mb-2">
+              Analisis Aksesibilitas
+            </h4>
+
+            <p class="text-sm text-slate-400 leading-relaxed">
+              Menampilkan hasil analisis jarak berbasis jaringan jalan dalam
+              bentuk visualisasi spasial.
+            </p>
+          </div>
+
+
+          <div
+            class="p-5 rounded-xl bg-slate-950/60 border border-slate-800"
+          >
+            <h4 class="font-semibold text-white mb-2">
+              Informasi Objek
+            </h4>
+
+            <p class="text-sm text-slate-400 leading-relaxed">
+              Memungkinkan pengguna untuk memilih objek tertentu pada peta dan
+              melihat informasi yang tersedia.
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- MANFAAT -->
+      <div
+        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8"
+      >
+
+        <h3 class="text-xl font-bold text-white mb-5">
+          MANFAAT
+        </h3>
+
+        <div
+          class="space-y-4 text-sm sm:text-base text-slate-400 leading-relaxed"
+        >
+
+          <p>
+            WebGIS ini diharapkan dapat membantu pengguna memahami kondisi
+            aksesibilitas dan persebaran infrastruktur di Desa Sidodasi
+            melalui informasi spasial yang lebih interaktif dan mudah
+            dipahami.
+          </p>
+
+          <p>
+            Bagi masyarakat, WebGIS dapat memberikan gambaran mengenai lokasi
+            infrastruktur dan jaringan jalan yang tersedia. Bagi mahasiswa dan
+            akademisi, WebGIS dapat menjadi contoh penerapan Sistem Informasi
+            Geografis, analisis jaringan, pengolahan data spasial, dan
+            pemetaan berbasis web.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <!-- METODOLOGI -->
+      <div
+        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8"
+      >
+
+        <h3 class="text-xl font-bold text-white mb-5">
+          METODOLOGI
+        </h3>
+
+        <div
+          class="space-y-4 text-sm sm:text-base text-slate-400 leading-relaxed"
+        >
+
+          <p>
+            Pengembangan WebGIS dilakukan melalui beberapa tahapan, yaitu
+            pengumpulan data spasial, pengolahan dan persiapan data,
+            pembangunan jaringan jalan, analisis aksesibilitas, visualisasi
+            hasil analisis, serta integrasi data ke dalam platform WebGIS.
+          </p>
+
+          <p>
+            Teknologi dan perangkat lunak yang digunakan meliputi QGIS untuk
+            pengolahan data spasial, QNEAT3 untuk analisis jaringan, serta
+            HTML, CSS, dan JavaScript untuk pengembangan antarmuka WebGIS.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <!-- TENTANG PROYEK -->
+      <div
+        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8"
+      >
+
+        <h3 class="text-xl font-bold text-white mb-5">
+          TENTANG PROYEK
+        </h3>
+
+        <div
+          class="space-y-4 text-sm sm:text-base text-slate-400 leading-relaxed"
+        >
+
+          <p>
+            WebGIS ini merupakan bagian dari Capstone Project Program Studi
+            Teknik Geomatika, Institut Teknologi Sumatera (ITERA).
+          </p>
+
+          <p>
+            <strong class="text-white">
+              Judul proyek:
+            </strong>
+            “Pengembangan WebGIS untuk Analisis Aksesibilitas Infrastruktur
+            Dasar Berbasis Jaringan Jalan di Desa Sidodasi, Kabupaten
+            Pesawaran.”
+          </p>
+
+          <p>
+            Proyek ini mengintegrasikan konsep Sistem Informasi Geografis,
+            analisis jaringan, pengolahan data spasial, dan teknologi
+            pemetaan berbasis web untuk menghasilkan media informasi
+            geografis yang interaktif dan informatif.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <!-- CATATAN -->
+      <div
+        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8"
+      >
+
+        <h3 class="text-xl font-bold text-white mb-5">
+          CATATAN
+        </h3>
+
+        <div
+          class="space-y-4 text-sm sm:text-base text-slate-400 leading-relaxed"
+        >
+
+          <p>
+            Informasi yang ditampilkan pada WebGIS ini merupakan hasil
+            pengolahan dan analisis data spasial untuk keperluan akademik dan
+            pengembangan Capstone Project. Hasil analisis menggambarkan
+            kondisi berdasarkan data dan parameter yang digunakan dalam
+            proses penelitian.
+          </p>
+
+          <p>
+            Perubahan kondisi jaringan jalan, lokasi infrastruktur, maupun
+            pembaruan data dapat memengaruhi hasil analisis. Oleh karena itu,
+            informasi pada WebGIS ini digunakan sebagai media informasi dan
+            visualisasi spasial, bukan sebagai satu-satunya dasar dalam
+            pengambilan keputusan di lapangan.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <!-- PENGEMBANG -->
+      <div
+        class="text-center py-10 border-t border-slate-800"
+      >
+
+        <h3 class="text-xl font-bold text-white mb-4">
+          PENGEMBANG
+        </h3>
+
+        <p class="text-slate-300 font-medium">
+          Kelompok 14 Kemah Kerja
+        </p>
+
+        <p class="text-slate-400 text-sm mt-1">
+          Program Studi Teknik Geomatika
+        </p>
+
+        <p class="text-slate-400 text-sm">
+          Institut Teknologi Sumatera (ITERA)
+        </p>
+
+        <p class="text-slate-500 text-sm mt-2">
+          Lampung, Indonesia
+        </p>
+
+        <p class="text-blue-400 text-sm font-medium mt-4">
+          Capstone Project 2026
+        </p>
+
+        <p class="text-slate-600 text-xs mt-8">
+          © 2026 WebGIS Analisis Aksesibilitas Infrastruktur Dasar
+        </p>
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- ========================================== -->
+  <!-- JAVASCRIPT -->
+  <!-- ========================================== -->
+
+  <script>
+
+    // Aktifkan Lucide Icons
+    lucide.createIcons();
+
+
+    // Buka dashboard
+    function enterDashboard() {
+
+      window.location.href = './dashboard.html';
+
+    }
+
+  </script>
+
+</body>
+</html>

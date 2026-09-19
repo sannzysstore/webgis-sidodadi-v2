@@ -1,0 +1,2107 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Analysis Desa Sidodadi - WebGIS Capstone Project</title>
+
+    <!-- Leaflet CSS & JS via CDN -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome Icon CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        #map {
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+        .sidebar-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+        .sidebar-scroll::-webkit-scrollbar-track {
+            background: #f8fafc;
+        }
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e2e8f0;
+            padding: 2px;
+        }
+        .leaflet-popup-content {
+            margin: 12px 14px;
+            font-family: 'Inter', sans-serif;
+        }
+        .pulse-route {
+            stroke-dasharray: 8, 8;
+            animation: dash 1.5s linear infinite;
+        }
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -16;
+            }
+        }
+
+                /* =====================================================
+           RESPONSIVE MOBILE
+           ===================================================== */
+        @media (max-width: 767px) {
+
+    body {
+        height: 100dvh;
+        min-height: 100dvh;
+        overflow: hidden;
+    }
+
+    #sidebar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 45dvh;
+        min-height: 0;
+        z-index: 50;
+        transition: height 0.15s ease;
+    }
+
+    main {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: 55dvh;
+        min-height: 0;
+        z-index: 10;
+    }
+
+    #qgisWebGIS {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+    }
+
+    /* Handle untuk menarik dashboard */
+    #sidebarDragHandle {
+        position: absolute;
+        bottom: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 50px;
+        height: 6px;
+        background: #94a3b8;
+        border-radius: 999px;
+        cursor: grab;
+        touch-action: none;
+        z-index: 100;
+    }
+
+    #sidebarDragHandle:active {
+        cursor: grabbing;
+    }
+}
+
+    </style>
+    
+</head>
+<body class="bg-slate-100 text-slate-800 h-screen w-screen overflow-hidden flex flex-col md:flex-row">
+
+    <!-- PANEL SIDEBAR (KIRI) -->
+    <aside id="sidebar" class="w-full md:w-[420px] bg-white border-r border-slate-200 flex flex-col h-full z-20 shadow-xl transition-all duration-300">
+        
+        <!-- Header Sidebar Proyek Capstone -->
+        <div class="p-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 text-white shadow-md">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2.5 bg-blue-600/30 rounded-xl backdrop-blur-sm border border-blue-400/40">
+                        <i class="fa-solid fa-route text-blue-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-base font-bold tracking-tight text-white">Network Analysis Desa Sidodadi</h1>
+                        <p class="text-[11px] text-blue-200 font-normal">WebGIS Analisis Jaringan dan Aksesibilitas</p>
+                    </div>
+                </div>
+                <span class="text-[10px] font-semibold tracking-wider px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                    GEOMATIKA
+                </span>
+            </div>
+        </div>
+
+        <!-- Tab Navigasi Sidebar -->
+        <div class="flex border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600">
+            <button id="tabBtnAnalisis" class="tab-btn flex-1 py-2.5 text-center border-b-2 border-blue-600 text-blue-700 bg-white transition-colors flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-calculator"></i> Analisis & Data
+            </button>
+            <button id="tabBtnLayer" class="tab-btn flex-1 py-2.5 text-center border-b-2 border-transparent hover:text-slate-900 transition-colors flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-layer-group"></i> Layer & Legenda
+            </button>
+            <button id="tabBtnInfo" class="tab-btn flex-1 py-2.5 text-center border-b-2 border-transparent hover:text-slate-900 transition-colors flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-circle-info"></i> Info Wilayah
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-4 space-y-4 sidebar-scroll">
+
+            <!-- ===================== PANEL TAB 1: ANALISIS & DATA ===================== -->
+            <div id="tabContentAnalisis" class="space-y-4">
+
+                <!-- Pencarian Cepat Toponimi / Fasilitas -->
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <label for="searchToponimi" class="text-xs font-semibold text-slate-700 block mb-1.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-magnifying-glass text-blue-600"></i> Cari Fasilitas / Toponimi
+                    </label>
+                    <div class="relative">
+                        <input type="text" id="searchToponimi" placeholder="Ketik nama sekolah, kantor, masjid..." 
+                               class="w-full px-3 py-2 text-xs bg-white rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        <button id="btnClearToponimi" class="hidden absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600">
+                            <i class="fa-solid fa-xmark text-xs"></i>
+                        </button>
+                    </div>
+                    <div id="searchSuggestions" class="mt-2 text-xs space-y-1 hidden max-h-36 overflow-y-auto"></div>
+                </div>
+
+                <!-- Modul Fitur Rute & Network Analysis -->
+                <div class="bg-gradient-to-br from-blue-50/70 to-indigo-50/60 p-4 rounded-xl border border-blue-200/80 shadow-sm">
+                    <div class="flex items-center justify-between pb-2 mb-3 border-b border-blue-200/60">
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-blue-900 flex items-center gap-1.5">
+                            <i class="fa-solid fa-diamond-turn-right text-blue-600"></i> Penentuan Rute Terpendek
+                        </h2>
+                        <span class="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-medium">Network</span>
+                    </div>
+
+                    <div class="space-y-2.5 text-xs">
+                        <div>
+                            <label class="block text-slate-600 font-medium mb-1">Titik Asal (Origin):</label>
+                            <div class="relative">
+                                <select id="selectOrigin" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">-- Pilih Titik Asal --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-600 font-medium mb-1">Titik Tujuan (Destination):</label>
+                            <div class="relative">
+                                <select id="selectDestination" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">-- Pilih Titik Tujuan --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 pt-1">
+                            <button id="btnCalculateRoute" class="flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-xs shadow-sm transition">
+                                <i class="fa-solid fa-play text-[10px]"></i> Tampilkan Rute
+                            </button>
+                            <button id="btnClearRoute" class="flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-lg text-xs transition">
+                                <i class="fa-solid fa-trash-can text-[10px]"></i> Hapus Rute
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Detail Hasil Analisis Rute Terpilih -->
+                    <div id="routeResultCard" class="mt-3.5 p-3 bg-white rounded-lg border border-blue-200 hidden text-xs space-y-1.5">
+                        <div class="font-bold text-blue-950 flex items-center justify-between border-b border-slate-100 pb-1">
+                            <span id="resRouteTitle">Hasil Rute Terpilih</span>
+                            <span class="text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded font-mono border border-amber-200">Terpendek</span>
+                        </div>
+                        <div class="flex justify-between text-slate-600">
+                            <span>Jarak Jaringan:</span>
+                            <span id="resRouteDistance" class="font-semibold text-slate-900 font-mono">0 meter</span>
+                        </div>
+                        <div class="flex justify-between text-slate-600">
+                            <span>Estimasi Waktu Tempuh:</span>
+                            <span id="resRouteTime" class="font-semibold text-slate-900 font-mono">0 menit</span>
+                        </div>
+                        <div class="flex justify-between text-slate-600">
+                            <span>Indeks Aksesibilitas:</span>
+                            <span id="resRouteAccess" class="font-semibold text-emerald-700">Tinggi</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel Statistik Jaringan Desa Sidodadi -->
+                <div>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-600 mb-2 flex items-center justify-between">
+                        <span>Statistik Jaringan & Aksesibilitas</span>
+                        <i class="fa-solid fa-chart-simple text-slate-400"></i>
+                    </h2>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                            <span class="text-[10px] font-semibold text-slate-500 uppercase block">Jumlah Titik Toponimi</span>
+                            <div class="flex items-baseline justify-between mt-1">
+                                <span id="statToponimiCount" class="text-2xl font-black text-blue-600">0</span>
+                                <i class="fa-solid fa-location-dot text-blue-400 text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                            <span class="text-[10px] font-semibold text-slate-500 uppercase block">Jumlah Ruas Jalan</span>
+                            <div class="flex items-baseline justify-between mt-1">
+                                <span id="statRoadCount" class="text-2xl font-black text-slate-800">0</span>
+                                <i class="fa-solid fa-road text-slate-400 text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                            <span class="text-[10px] font-semibold text-slate-500 uppercase block">Total Panjang Jaringan</span>
+                            <div class="flex items-baseline justify-between mt-1">
+                                <span id="statRoadLength" class="text-xl font-black text-indigo-700">0 km</span>
+                                <i class="fa-solid fa-ruler-combined text-indigo-400 text-xs"></i>
+                            </div>
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                            <span class="text-[10px] font-semibold text-slate-500 uppercase block">Konektivitas Jaringan</span>
+                            <div class="flex items-baseline justify-between mt-1">
+                                <span id="statConnectivity" class="text-base font-bold text-emerald-600">Terkoneksi Baik</span>
+                                <i class="fa-solid fa-network-wired text-emerald-400 text-xs"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tombol Aksi Cepat Peta -->
+                <div>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Aksi Peta</h2>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="btnResetView" class="flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium border border-slate-200 transition">
+                            <i class="fa-solid fa-house text-slate-500"></i> Reset View
+                        </button>
+                        <button id="btnFitAll" class="flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium border border-slate-200 transition">
+                            <i class="fa-solid fa-expand text-slate-500"></i> Zoom Seluruh Wilayah
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===================== PANEL TAB 2: LAYER & LEGENDA ===================== -->
+            <div id="tabContentLayer" class="space-y-4 hidden">
+                
+                <!-- Kontrol Aktif/Nonaktifkan Layer GeoJSON -->
+                <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-3 flex items-center justify-between">
+                        <span>Kontrol Visibilitas Layer</span>
+                        <i class="fa-solid fa-eye text-slate-400"></i>
+                    </h2>
+                    <div class="space-y-2.5 text-xs">
+                        <label class="flex items-center space-x-2.5 cursor-pointer hover:bg-slate-50 p-1.5 rounded-lg transition">
+                            <input type="checkbox" id="layerBatasToggle" checked class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                            <span class="font-medium text-slate-700">Batas Administrasi Desa</span>
+                        </label>
+                        <label class="flex items-center space-x-2.5 cursor-pointer hover:bg-slate-50 p-1.5 rounded-lg transition">
+                            <input type="checkbox" id="layerJalanToggle" checked class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                            <span class="font-medium text-slate-700">Jaringan Jalan Desa</span>
+                        </label>
+                        <label class="flex items-center space-x-2.5 cursor-pointer hover:bg-slate-50 p-1.5 rounded-lg transition">
+                            <input type="checkbox" id="layerToponimiToggle" checked class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                            <span class="font-medium text-slate-700">Titik Toponimi / Fasilitas</span>
+                        </label>
+                        <label class="flex items-center space-x-2.5 cursor-pointer hover:bg-slate-50 p-1.5 rounded-lg transition">
+                            <input type="checkbox" id="layerNetworkToggle" checked class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                            <span class="font-medium text-slate-700">Hasil Analisis Network (Rute Terpendek)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Legenda Simbologi Spasial -->
+<div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+
+    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-3 flex items-center justify-between">
+        <span>Legenda Peta</span>
+        <i class="fa-solid fa-list text-slate-400"></i>
+    </h2>
+
+    <div class="space-y-2.5 text-xs">
+
+        <!-- Clipped Mask -->
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="w-5 h-3 rounded bg-slate-200 border border-slate-400"></span>
+                <span class="text-slate-700">Clipped (mask)</span>
+            </div>
+            <span class="text-[10px] text-slate-400">Raster</span>
+        </div>
+
+        <!-- Jaringan Jalan -->
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="w-5 h-1 rounded bg-purple-500"></span>
+                <span class="text-slate-700">Jaringan Jalan</span>
+            </div>
+            <span class="text-[10px] text-slate-400">Line</span>
+        </div>
+
+        <!-- Toponimi -->
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-yellow-400 border border-slate-700"></span>
+                <span class="text-slate-700">Toponimi / Fasilitas</span>
+            </div>
+            <span class="text-[10px] text-slate-400">Point</span>
+        </div>
+
+        <!-- Bangunan -->
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="w-5 h-3 rounded bg-pink-400 border border-slate-700"></span>
+                <span class="text-slate-700">Bangunan</span>
+            </div>
+            <span class="text-[10px] text-slate-400">Polygon</span>
+        </div>
+
+        <!-- Rute Network -->
+        <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+            <div class="flex items-center gap-2">
+                <span class="w-5 h-1.5 rounded bg-black"></span>
+                <span class="text-slate-700 font-semibold">Rute Hasil Analisis</span>
+            </div>
+            <span class="text-[10px] text-slate-400">Line</span>
+        </div>
+
+    </div>
+</div>
+</div>
+
+            <!-- ===================== PANEL TAB 3: INFORMASI WILAYAH ===================== -->
+<div id="tabContentInfo" class="space-y-4 hidden text-xs leading-relaxed text-slate-600">
+
+    <!-- Informasi Wilayah -->
+    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+
+        <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-location-dot text-blue-600"></i>
+            Informasi Wilayah Desa Sidodadi
+        </h3>
+
+        <div class="space-y-2">
+            <p><strong>Nama Wilayah:</strong> Desa Sidodadi</p>
+            <p><strong>Kabupaten:</strong> Pesawaran</p>
+            <p><strong>Provinsi:</strong> Lampung</p>
+            <p><strong>Jenis Wilayah:</strong> Permukiman dan kawasan agraris</p>
+        </div>
+
+    </div>
+
+    <!-- Gambaran Wilayah -->
+    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+
+        <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-map-location-dot text-blue-600"></i>
+            Gambaran Wilayah Studi
+        </h3>
+
+        <p>
+            <strong>Desa Sidodadi</strong> merupakan kawasan
+            permukiman dan agraris dengan dinamika pergerakan
+            penduduk yang terpusat di sepanjang koridor jalan utama
+            desa menuju fasilitas pelayanan dasar masyarakat.
+        </p>
+
+    </div>
+<!-- Konteks Pemetaan -->
+<div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+    <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+        <i class="fa-solid fa-map text-blue-600"></i>
+        Konteks Pemetaan
+    </h3>
+
+    <p>
+        WebGIS ini dikembangkan untuk memberikan gambaran spasial
+        mengenai kondisi wilayah Desa Sidodadi serta jaringan jalan
+        yang terdapat di dalam wilayah studi.
+    </p>
+
+    <p>
+        Informasi spasial yang ditampilkan meliputi batas wilayah,
+        jaringan jalan, titik toponimi atau fasilitas, serta hasil
+        analisis jaringan untuk membantu melihat keterhubungan dan
+        aksesibilitas antar lokasi.
+    </p>
+</div>
+
+</div>
+
+            <!-- Kotak Inspektor Koordinat Kursor & Klik -->
+            <div class="bg-slate-900 text-slate-200 p-3 rounded-xl border border-slate-800">
+                <div class="flex items-center justify-between text-[11px] font-semibold text-slate-400 mb-1">
+                    <span>INSPEKTOR KOORDINAT (WGS 84)</span>
+                    <i class="fa-solid fa-crosshairs text-blue-400"></i>
+                </div>
+                <p class="text-[10px] text-slate-400">Gerakkan kursor atau klik pada peta:</p>
+                <div class="mt-2 grid grid-cols-2 gap-2 text-xs font-mono">
+                    <div class="bg-slate-800/90 p-1.5 rounded border border-slate-700">
+                        <span class="text-slate-400 block text-[10px]">Lintang (Y / Lat):</span>
+                        <span id="coordLat" class="text-blue-300 font-medium">-5.365000</span>
+                    </div>
+                    <div class="bg-slate-800/90 p-1.5 rounded border border-slate-700">
+                        <span class="text-slate-400 block text-[10px]">Bujur (X / Long):</span>
+                        <span id="coordLng" class="text-blue-300 font-medium">105.215000</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer Sidebar -->
+        <footer class="p-3 bg-slate-50 border-t border-slate-200 text-center text-[11px] text-slate-500">
+            Teknik Geomatika &bull; Capstone Project 2026
+        </footer>
+    </aside>
+
+    <!-- CONTAINER PETA UTAMA -->
+    <main class="flex-1 relative h-full w-full">
+   <!-- WebGIS hasil QGIS -->
+<iframe
+    id="qgisWebGIS"
+    src="./webgis-qgis/index.html"
+    title="WebGIS Desa Sidodadi"
+    style="
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: block;
+    ">
+</iframe>
+<script>
+document.getElementById('qgisWebGIS').addEventListener('load', function () {
+    try {
+        const qgis = this.contentWindow;
+
+        // Data Toponimi
+        const toponimi = qgis.json_TOPONIMIfixacc_3;
+        const jumlahToponimi = toponimi.features.length;
+
+        // Data Jalan
+        const jalan = qgis.json_jalan_4;
+        const jumlahJalan = jalan.features.length;
+
+        // Total panjang jalan
+        const totalPanjangMeter = jalan.features.reduce((total, feature) => {
+            return total + (parseFloat(feature.properties.Shape_Leng) || 0);
+        }, 0);
+
+        const totalPanjangKm = totalPanjangMeter / 1000;
+
+        // Masukkan hasil ke statistik
+        document.getElementById('statToponimiCount').textContent =
+            jumlahToponimi;
+
+        document.getElementById('statRoadCount').textContent =
+            jumlahJalan;
+
+        document.getElementById('statRoadLength').textContent =
+            totalPanjangKm.toFixed(2) + ' km';
+
+        console.log('Jumlah Toponimi:', jumlahToponimi);
+        console.log('Jumlah Jalan:', jumlahJalan);
+        console.log('Total Panjang:', totalPanjangKm.toFixed(2), 'km');
+
+        // =============================================================
+// MENGISI STATISTIK PADA TAB INFO WILAYAH
+// =============================================================
+
+const infoToponimi = document.getElementById('infoToponimiCount');
+const infoRoad = document.getElementById('infoRoadCount');
+const infoRoadLength = document.getElementById('infoRoadLength');
+
+if (infoToponimi) {
+    infoToponimi.textContent = jumlahToponimi;
+}
+
+if (infoRoad) {
+    infoRoad.textContent = jumlahJalan;
+}
+
+if (infoRoadLength) {
+    infoRoadLength.textContent = totalPanjangKm.toFixed(2) + ' km';
+}
+
+    } catch (error) {
+        console.error('Gagal membaca data WebGIS QGIS:', error);
+    }
+});
+// =============================================================
+// MENGISI DROPDOWN ORIGIN & DESTINATION DARI DATA QGIS
+// =============================================================
+document.getElementById('qgisWebGIS').addEventListener('load', function () {
+    try {
+        const qgis = this.contentWindow;
+        const dataToponimi = qgis.json_TOPONIMIfixacc_3;
+
+        const selectOrigin = document.getElementById('selectOrigin');
+        const selectDestination = document.getElementById('selectDestination');
+
+        // Hapus pilihan/data lama dari template
+        selectOrigin.innerHTML = '<option value="">-- Pilih Titik Asal --</option>';
+        selectDestination.innerHTML = '<option value="">-- Pilih Titik Tujuan --</option>';
+
+        // Masukkan seluruh titik toponimi dari QGIS
+        dataToponimi.features.forEach((feature, index) => {
+            const nama = feature.properties.field_2;
+
+            if (!nama) return;
+
+            const optionOrigin = document.createElement('option');
+            optionOrigin.value = nama;
+            optionOrigin.textContent = `${index + 1}. ${nama}`;
+
+            const optionDestination = document.createElement('option');
+            optionDestination.value = nama;
+            optionDestination.textContent = `${index + 1}. ${nama}`;
+
+            selectOrigin.appendChild(optionOrigin);
+            selectDestination.appendChild(optionDestination);
+        });
+
+        console.log(
+            'Dropdown Origin/Destination berhasil diisi:',
+            dataToponimi.features.length,
+            'titik'
+        );
+
+    } catch (error) {
+        console.error('Gagal mengisi dropdown dari QGIS:', error);
+    }
+});
+</script>
+
+        <!-- Floating Quick Action Buttons (Fullscreen & Center) -->
+        <div class="absolute top-4 right-4 z-20 flex flex-col space-y-2">
+            <button id="btnFullscreen" title="Layar Penuh" class="w-9 h-9 bg-white hover:bg-slate-100 text-slate-700 rounded-lg shadow-md border border-slate-200 flex items-center justify-center transition">
+                <i class="fa-solid fa-expand text-sm"></i>
+            </button>
+        </div>
+
+                <!-- Status Bar Peta -->
+        <div class="absolute bottom-6 left-4 z-20 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-md border border-slate-200 text-[11px] text-slate-700 hidden sm:flex items-center gap-2 pointer-events-none">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Network Analysis Mode: Aktif (Koneksi Spasial Siap)</span>
+        </div>
+
+        <!-- Watermark Dashboard -->
+        <div
+            class="absolute bottom-6 right-4 z-20 bg-white/75 backdrop-blur-sm px-3 py-1.5 rounded-md shadow-sm border border-slate-200 text-[11px] font-semibold text-slate-500 pointer-events-none select-none">
+            KELOMPOK 14
+        </div>
+    </main>
+    
+    <script>
+        /**
+         * ========================================================================
+         * CAPSTONE PROJECT: NETWORK ANALYSIS DESA SIDODADI
+         * Modul Data Spasial GeoJSON Lokal (Dummy Representatif Desa Sidodadi)
+         * Sistem Proyeksi Koordinat: WGS 84 (EPSG:4326) [Longitude, Latitude]
+         * ========================================================================
+         */
+
+        // 1. Batas Wilayah Administrasi Desa Sidodadi (Polygon)
+        const batasDesaGeoJSON = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "nama_wilayah": "Desa Sidodadi",
+                        "kecamatan": "Jati Agung / Teluk Pandan",
+                        "kabupaten": "Pesawaran / Lampung Selatan",
+                        "luas_ha": 380.4,
+                        "kode_desa": "18.01.05.2004"
+                    },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [105.2000, -5.3520],
+                            [105.2300, -5.3520],
+                            [105.2350, -5.3650],
+                            [105.2300, -5.3800],
+                            [105.2050, -5.3800],
+                            [105.1950, -5.3680],
+                            [105.2000, -5.3520]
+                        ]]
+                    }
+                }
+            ]
+        };
+
+        // 2. Jaringan Jalan Desa Sidodadi (LineStrings dengan atribut lengkap)
+        const jaringanJalanGeoJSON = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id_jalan": "JL-01",
+                        "nama_jalan": "Jl. Raya Utama Sidodadi",
+                        "jenis_jalan": "Aspal Hotmix",
+                        "panjang_m": 2450,
+                        "kelas_jalan": "Jalan Utama",
+                        "lebar_m": 6.0
+                    },
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [
+                            [105.2020, -5.3620],
+                            [105.2100, -5.3635],
+                            [105.2180, -5.3650],
+                            [105.2260, -5.3665]
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id_jalan": "JL-02",
+                        "nama_jalan": "Jl. Pendidikan Barat",
+                        "jenis_jalan": "Aspal Sederhana",
+                        "panjang_m": 1200,
+                        "kelas_jalan": "Jalan Lokal",
+                        "lebar_m": 4.0
+                    },
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [
+                            [105.2100, -5.3635],
+                            [105.2090, -5.3560],
+                            [105.2120, -5.3540]
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id_jalan": "JL-03",
+                        "nama_jalan": "Jl. Kesehatan & Pelayanan",
+                        "jenis_jalan": "Paving Block",
+                        "panjang_m": 950,
+                        "kelas_jalan": "Jalan Lokal",
+                        "lebar_m": 4.0
+                    },
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [
+                            [105.2180, -5.3650],
+                            [105.2185, -5.3720],
+                            [105.2150, -5.3750]
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id_jalan": "JL-04",
+                        "nama_jalan": "Jl. Pasar Sentral Sidodadi",
+                        "jenis_jalan": "Aspal Hotmix",
+                        "panjang_m": 1400,
+                        "kelas_jalan": "Jalan Utama",
+                        "lebar_m": 5.5
+                    },
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [
+                            [105.2180, -5.3650],
+                            [105.2220, -5.3580],
+                            [105.2250, -5.3550]
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id_jalan": "JL-05",
+                        "nama_jalan": "Jl. Lingkungan Tani Makmur",
+                        "jenis_jalan": "Rabat Beton",
+                        "panjang_m": 1100,
+                        "kelas_jalan": "Jalan Lokal",
+                        "lebar_m": 3.5
+                    },
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [
+                            [105.2260, -5.3665],
+                            [105.2280, -5.3730],
+                            [105.2230, -5.3760]
+                        ]
+                    }
+                }
+            ]
+        };
+
+        // 3. Titik Toponimi dan Fasilitas Umum Desa Sidodadi (Points)
+        const titikToponimiGeoJSON = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id": "TP-01",
+                        "nama": "Kantor Kepala Desa Sidodadi",
+                        "jenis": "Pemerintahan",
+                        "x": 105.2180,
+                        "y": -5.3650,
+                        "deskripsi": "Pusat administrasi desa dan pertemuan warga"
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [105.2180, -5.3650]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id": "TP-02",
+                        "nama": "Puskesmas Pembantu Sidodadi",
+                        "jenis": "Kesehatan",
+                        "x": 105.2150,
+                        "y": -5.3750,
+                        "deskripsi": "Pelayanan kesehatan dasar dan posyandu"
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [105.2150, -5.3750]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id": "TP-03",
+                        "nama": "SD Negeri 1 Sidodadi",
+                        "jenis": "Pendidikan",
+                        "x": 105.2120,
+                        "y": -5.3540,
+                        "deskripsi": "Fasilitas pendidikan dasar negeri"
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [105.2120, -5.3540]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id": "TP-04",
+                        "nama": "Pasar Tradisional Sidodadi",
+                        "jenis": "Ekonomi",
+                        "x": 105.2250,
+                        "y": -5.3550,
+                        "deskripsi": "Pusat transaksi ekonomi dan komoditas pertanian"
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [105.2250, -5.3550]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id": "TP-05",
+                        "nama": "Masjid Jami' Baiturrahman",
+                        "jenis": "Ibadah",
+                        "x": 105.2100,
+                        "y": -5.3635,
+                        "deskripsi": "Masjid utama desa dan pusat kegiatan sosial keagamaan"
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [105.2100, -5.3635]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id": "TP-06",
+                        "nama": "Balai Pertemuan Tani Makmur",
+                        "jenis": "Pemerintahan",
+                        "x": 105.2230,
+                        "y": -5.3760,
+                        "deskripsi": "Pusat kelompok tani dan lumbung desa"
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [105.2230, -5.3760]
+                    }
+                }
+            ]
+        };
+
+        // 4. Hasil Network Analysis (Rute Terpendek / Shortest Path antar fasilitas)
+        const hasilNetworkGeoJSON = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id_rute": "RT-01",
+                        "asal": "Kantor Kepala Desa Sidodadi",
+                        "tujuan": "Puskesmas Pembantu Sidodadi",
+                        "panjang_meter": 950,
+                        "waktu_menit": 2.4,
+                        "kecepatan_rata_kmh": 25,
+                        "aksesibilitas": "Sangat Baik"
+                    },
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [
+                            [105.2180, -5.3650],
+                            [105.2185, -5.3720],
+                            [105.2150, -5.3750]
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id_rute": "RT-02",
+                        "asal": "Kantor Kepala Desa Sidodadi",
+                        "tujuan": "SD Negeri 1 Sidodadi",
+                        "panjang_meter": 1980,
+                        "waktu_menit": 4.8,
+                        "kecepatan_rata_kmh": 25,
+                        "aksesibilitas": "Baik"
+                    },
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [
+                            [105.2180, -5.3650],
+                            [105.2100, -5.3635],
+                            [105.2090, -5.3560],
+                            [105.2120, -5.3540]
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id_rute": "RT-03",
+                        "asal": "Kantor Kepala Desa Sidodadi",
+                        "tujuan": "Pasar Tradisional Sidodadi",
+                        "panjang_meter": 1400,
+                        "waktu_menit": 3.1,
+                        "kecepatan_rata_kmh": 30,
+                        "aksesibilitas": "Sangat Baik"
+                    },
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [
+                            [105.2180, -5.3650],
+                            [105.2220, -5.3580],
+                            [105.2250, -5.3550]
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id_rute": "RT-04",
+                        "asal": "Puskesmas Pembantu Sidodadi",
+                        "tujuan": "Balai Pertemuan Tani Makmur",
+                        "panjang_meter": 1350,
+                        "waktu_menit": 3.5,
+                        "kecepatan_rata_kmh": 25,
+                        "aksesibilitas": "Baik"
+                    },
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [
+                            [105.2150, -5.3750],
+                            [105.2185, -5.3720],
+                            [105.2230, -5.3760]
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id_rute": "RT-05",
+                        "asal": "SD Negeri 1 Sidodadi",
+                        "tujuan": "Pasar Tradisional Sidodadi",
+                        "panjang_meter": 2200,
+                        "waktu_menit": 5.2,
+                        "kecepatan_rata_kmh": 25,
+                        "aksesibilitas": "Sedang"
+                    },
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [
+                            [105.2120, -5.3540],
+                            [105.2090, -5.3560],
+                            [105.2100, -5.3635],
+                            [105.2180, -5.3650],
+                            [105.2220, -5.3580],
+                            [105.2250, -5.3550]
+                        ]
+                    }
+                }
+            ]
+        };
+
+        // -------------------------------------------------------------
+        // INISIALISASI PETA LEAFLET
+        // -------------------------------------------------------------
+        const initialCenter = [-5.3650, 105.2160];
+        const initialZoom = 14;
+
+        let map = null;
+
+        // -------------------------------------------------------------
+        // STYLING & GENERATOR POPUP
+        // -------------------------------------------------------------
+
+        // Menentukan warna marker berdasarkan jenis fasilitas toponimi
+        function getToponimiColor(jenis) {
+            switch (jenis) {
+                case 'Pemerintahan': return '#2563eb'; // Blue
+                case 'Kesehatan': return '#e11d48';    // Rose
+                case 'Pendidikan': return '#059669';   // Emerald
+                case 'Ekonomi': return '#d97706';      // Amber
+                case 'Ibadah': return '#0d9488';       // Teal
+                default: return '#475569';
+            }
+        }
+
+        // Popup Titik Toponimi
+        function createToponimiPopup(props) {
+            const color = getToponimiColor(props.jenis);
+            return `
+                <div class="text-xs">
+                    <div class="pb-1.5 mb-2 border-b border-slate-200 flex items-center justify-between">
+                        <span class="font-bold text-slate-900 text-sm">${props.nama}</span>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Jenis Fasilitas:</span>
+                            <span class="font-semibold" style="color:${color}">${props.jenis}</span>
+                        </div>
+                        <div class="flex justify-between font-mono text-[11px] bg-slate-50 p-1 rounded border border-slate-100">
+                            <span class="text-slate-500">Koordinat X:</span>
+                            <span class="text-slate-800 font-medium">${props.x.toFixed(5)}</span>
+                        </div>
+                        <div class="flex justify-between font-mono text-[11px] bg-slate-50 p-1 rounded border border-slate-100">
+                            <span class="text-slate-500">Koordinat Y:</span>
+                            <span class="text-slate-800 font-medium">${props.y.toFixed(5)}</span>
+                        </div>
+                        <div class="pt-1 text-slate-600">
+                            <span class="text-slate-400 block text-[10px]">Keterangan:</span>
+                            <span>${props.deskripsi || '-'}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Popup Jaringan Jalan
+        function createJalanPopup(props) {
+            const isUtama = props.kelas_jalan === 'Jalan Utama';
+            return `
+                <div class="text-xs">
+                    <div class="pb-1 mb-2 border-b border-slate-200">
+                        <span class="font-bold text-slate-900 text-sm">${props.nama_jalan}</span>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Kelas Jalan:</span>
+                            <span class="font-semibold ${isUtama ? 'text-amber-700' : 'text-slate-700'}">${props.kelas_jalan}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Jenis Perkerasan:</span>
+                            <span class="text-slate-800">${props.jenis_jalan}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Panjang Ruas:</span>
+                            <span class="font-mono font-semibold text-slate-900">${props.panjang_m.toLocaleString()} m</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Lebar:</span>
+                            <span class="text-slate-800">${props.lebar_m} meter</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // -------------------------------------------------------------
+        // PEMBENTUKAN LAYER GEOJSON
+        // -------------------------------------------------------------
+
+        // 1. Layer Batas Desa
+        const layerBatasDesa = L.geoJSON(batasDesaGeoJSON, {
+            style: {
+                color: "#ef4444",
+                weight: 2.5,
+                dashArray: "6, 6",
+                fillColor: "#f87171",
+                fillOpacity: 0.08
+            },
+            onEachFeature: function(feature, layer) {
+                layer.bindPopup(`
+                    <div class="text-xs">
+                        <span class="font-bold text-slate-900 text-sm block">${feature.properties.nama_wilayah}</span>
+                        <p class="text-slate-500 mt-1">Kode: ${feature.properties.kode_desa}</p>
+                        <p class="text-slate-500">Estimasi Luas: ${feature.properties.luas_ha} Ha</p>
+                    </div>
+                `);
+            }
+        });
+
+        // 2. Layer Jaringan Jalan
+        const layerJaringanJalan = L.geoJSON(jaringanJalanGeoJSON, {
+            style: function(feature) {
+                const isUtama = feature.properties.kelas_jalan === 'Jalan Utama';
+                return {
+                    color: isUtama ? "#d97706" : "#64748b",
+                    weight: isUtama ? 4.5 : 2.5,
+                    opacity: 0.85
+                };
+            },
+            onEachFeature: function(feature, layer) {
+                layer.bindPopup(createJalanPopup(feature.properties));
+                layer.on('mouseover', function() {
+                    this.setStyle({ weight: 6, opacity: 1 });
+                });
+                layer.on('mouseout', function() {
+                    const isUtama = feature.properties.kelas_jalan === 'Jalan Utama';
+                    this.setStyle({ weight: isUtama ? 4.5 : 2.5, opacity: 0.85 });
+                });
+            }
+        });
+
+        // 3. Layer Titik Toponimi
+        const toponimiMarkers = [];
+        const layerToponimi = L.geoJSON(titikToponimiGeoJSON, {
+            pointToLayer: function(feature, latlng) {
+                const markerColor = getToponimiColor(feature.properties.jenis);
+                const marker = L.circleMarker(latlng, {
+                    radius: 8,
+                    fillColor: markerColor,
+                    color: "#ffffff",
+                    weight: 2.5,
+                    opacity: 1,
+                    fillOpacity: 0.95
+                });
+
+                toponimiMarkers.push({
+                    name: feature.properties.nama,
+                    jenis: feature.properties.jenis,
+                    marker: marker,
+                    latlng: latlng
+                });
+
+                return marker;
+            },
+            onEachFeature: function(feature, layer) {
+                layer.bindPopup(createToponimiPopup(feature.properties));
+                layer.on('mouseover', function() { this.setRadius(11); });
+                layer.on('mouseout', function() { this.setRadius(8); });
+            }
+        });
+
+        // 4. Layer Rute Hasil Analisis Network (Highlight Terpilih)
+       
+        // -------------------------------------------------------------
+        // MENGISI DROPDOWN FITUR RUTE
+        // -------------------------------------------------------------
+        const selectOrigin = document.getElementById('selectOrigin');
+        const selectDestination = document.getElementById('selectDestination');
+
+        titikToponimiGeoJSON.features.forEach(f => {
+            const opt1 = document.createElement('option');
+            opt1.value = f.properties.nama;
+            opt1.textContent = `${f.properties.nama} (${f.properties.jenis})`;
+            selectOrigin.appendChild(opt1);
+
+            const opt2 = document.createElement('option');
+            opt2.value = f.properties.nama;
+            opt2.textContent = `${f.properties.nama} (${f.properties.jenis})`;
+            selectDestination.appendChild(opt2);
+        });
+
+        // Set default pilihan yang relevan
+        selectOrigin.value = "Kantor Kepala Desa Sidodadi";
+        selectDestination.value = "Puskesmas Pembantu Sidodadi";
+
+        // -------------------------------------------------------------
+        // LOGIKA ANALISIS RUTE (PENENTUAN RUTE TERPENDEK)
+        // -------------------------------------------------------------
+        
+        // =============================================================
+// NETWORK ANALYSIS - RUTE TERPENDEK DARI JARINGAN JALAN QGIS
+// =============================================================
+
+let activeRouteLayer = null;
+// -------------------------------------------------------------
+// KONTROL VISIBILITAS TOPONIMI / FASILITAS
+// -------------------------------------------------------------
+
+document.getElementById('layerToponimiToggle').addEventListener('change', function() {
+
+    const iframe = document.getElementById('qgisWebGIS');
+
+    if (!iframe || !iframe.contentWindow) {
+        return;
+    }
+
+    const qgisWindow = iframe.contentWindow;
+    const toponimiLayer = qgisWindow.layer_TOPONIMIfixacc_3;
+
+    if (!qgisMap || !toponimiLayer) {
+        return;
+    }
+
+    if (this.checked) {
+        qgisMap.addLayer(toponimiLayer);
+    } else {
+        qgisMap.removeLayer(toponimiLayer);
+    }
+
+});
+
+function distanceMeter(a, b) {
+    const R = 6371000;
+
+    const lat1 = a[1] * Math.PI / 180;
+    const lat2 = b[1] * Math.PI / 180;
+    const dLat = (b[1] - a[1]) * Math.PI / 180;
+    const dLon = (b[0] - a[0]) * Math.PI / 180;
+
+    const x =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1) *
+        Math.cos(lat2) *
+        Math.sin(dLon / 2) ** 2;
+
+    return R * 2 * Math.atan2(
+        Math.sqrt(x),
+        Math.sqrt(1 - x)
+    );
+}
+function buildRoadGraph(roadData) {
+
+    const graph = {};
+
+    function nodeKey(coord) {
+        return `${coord[0].toFixed(5)},${coord[1].toFixed(5)}`;
+    }
+
+    function addNode(coord) {
+
+        const key = nodeKey(coord);
+
+        if (!graph[key]) {
+            graph[key] = {
+                coord: coord,
+                edges: []
+            };
+        }
+
+        return key;
+    }
+
+    function connect(a, b) {
+
+        const keyA = addNode(a);
+        const keyB = addNode(b);
+
+        const distance = distanceMeter(a, b);
+
+        if (distance === 0) return;
+
+        graph[keyA].edges.push({
+            to: keyB,
+            weight: distance
+        });
+
+        graph[keyB].edges.push({
+            to: keyA,
+            weight: distance
+        });
+    }
+
+    roadData.features.forEach(feature => {
+
+        const geometry = feature.geometry;
+
+        if (!geometry) return;
+
+        if (geometry.type === 'MultiLineString') {
+
+            geometry.coordinates.forEach(line => {
+
+                for (let i = 0; i < line.length - 1; i++) {
+                    connect(line[i], line[i + 1]);
+                }
+
+            });
+
+        } else if (geometry.type === 'LineString') {
+
+            const line = geometry.coordinates;
+
+            for (let i = 0; i < line.length - 1; i++) {
+                connect(line[i], line[i + 1]);
+            }
+
+        }
+
+    });
+
+    // Menghubungkan node yang koordinatnya sangat berdekatan
+    const keys = Object.keys(graph);
+
+    for (let i = 0; i < keys.length; i++) {
+
+        for (let j = i + 1; j < keys.length; j++) {
+
+            const nodeA = graph[keys[i]];
+            const nodeB = graph[keys[j]];
+
+            const distance = distanceMeter(
+                nodeA.coord,
+                nodeB.coord
+            );
+
+            // toleransi koneksi 5 meter
+            if (distance <= 5) {
+
+                const keyA = keys[i];
+                const keyB = keys[j];
+
+                graph[keyA].edges.push({
+                    to: keyB,
+                    weight: distance
+                });
+
+                graph[keyB].edges.push({
+                    to: keyA,
+                    weight: distance
+                });
+            }
+        }
+    }
+
+    return graph;
+}
+
+function findNearestRoadNode(graph, point) {
+
+    let nearestKey = null;
+    let nearestDistance = Infinity;
+
+    Object.keys(graph).forEach(key => {
+
+        const d = distanceMeter(
+            point,
+            graph[key].coord
+        );
+
+        if (d < nearestDistance) {
+            nearestDistance = d;
+            nearestKey = key;
+        }
+
+    });
+
+    return {
+        key: nearestKey,
+        distance: nearestDistance
+    };
+}
+
+function dijkstra(graph, startKey, endKey) {
+
+    const distances = {};
+    const previous = {};
+    const visited = new Set();
+
+    Object.keys(graph).forEach(key => {
+        distances[key] = Infinity;
+        previous[key] = null;
+    });
+
+    distances[startKey] = 0;
+
+    while (true) {
+
+        let current = null;
+        let currentDistance = Infinity;
+
+        Object.keys(graph).forEach(key => {
+
+            if (
+                !visited.has(key) &&
+                distances[key] < currentDistance
+            ) {
+                current = key;
+                currentDistance = distances[key];
+            }
+
+        });
+
+        if (current === null) break;
+
+        if (current === endKey) break;
+
+        visited.add(current);
+
+        graph[current].edges.forEach(edge => {
+
+            const newDistance =
+                distances[current] + edge.weight;
+
+            if (newDistance < distances[edge.to]) {
+
+                distances[edge.to] = newDistance;
+                previous[edge.to] = current;
+
+            }
+
+        });
+
+    }
+
+    if (distances[endKey] === Infinity) {
+        return null;
+    }
+
+    const path = [];
+
+    let current = endKey;
+
+    while (current !== null) {
+
+        path.unshift(current);
+        current = previous[current];
+
+    }
+
+    return {
+        path: path,
+        distance: distances[endKey]
+    };
+}
+
+// =============================================================
+// NETWORK ANALYSIS - MENGGUNAKAN DATA JALAN QGIS
+// =============================================================
+
+let qgisMap = null;
+let qgisRouteLayer = null;
+
+// -------------------------------------------------------------
+// KONTROL VISIBILITAS BATAS ADMINISTRASI DESA
+// -------------------------------------------------------------
+
+document.getElementById('layerBatasToggle').addEventListener('change', function() {
+
+    const iframe = document.getElementById('qgisWebGIS');
+
+    if (!iframe || !iframe.contentWindow) {
+        return;
+    }
+
+    const qgisWindow = iframe.contentWindow;
+
+    // Layer Clipped (mask) dari QGIS
+    const batasLayer = qgisWindow.layer_Clippedmask_0;
+
+    if (!qgisMap || !batasLayer) {
+        return;
+    }
+
+    if (this.checked) {
+        qgisMap.addLayer(batasLayer);
+    } else {
+        qgisMap.removeLayer(batasLayer);
+    }
+
+});
+
+// -------------------------------------------------------------
+// KONTROL VISIBILITAS HASIL ANALISIS NETWORK
+// -------------------------------------------------------------
+
+document.getElementById('layerNetworkToggle').addEventListener('change', function() {
+
+    if (!qgisMap || !qgisRouteLayer) {
+        return;
+    }
+
+    if (this.checked) {
+        qgisMap.addLayer(qgisRouteLayer);
+    } else {
+        qgisMap.removeLayer(qgisRouteLayer);
+    }
+
+});
+
+// Ambil objek peta Leaflet dari WebGIS QGIS
+document.getElementById('qgisWebGIS').addEventListener('load', function () {
+    try {
+        qgisMap = this.contentWindow.map;
+const qgisWindow = this.contentWindow;
+
+if (qgisMap && qgisWindow.L) {
+
+    qgisWindow.L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        {
+            maxZoom: 18,
+            attribution: '&copy; OpenStreetMap contributors'
+        }
+    ).addTo(qgisMap);
+
+}
+        if (qgisMap) {
+            console.log('Peta Leaflet QGIS berhasil terhubung.');
+        } else {
+            console.warn('Objek map QGIS tidak ditemukan.');
+        }
+    } catch (error) {
+        console.error('Gagal menghubungkan peta QGIS:', error);
+    }
+});
+
+
+// -------------------------------------------------------------
+// Mencari data titik berdasarkan nama
+// -------------------------------------------------------------
+function getQgisToponimiByName(nama) {
+
+    const iframe = document.getElementById('qgisWebGIS');
+
+    if (!iframe || !iframe.contentWindow) {
+        return null;
+    }
+
+    const dataToponimi = iframe.contentWindow.json_TOPONIMIfixacc_3;
+
+    if (!dataToponimi) {
+        return null;
+    }
+
+    return dataToponimi.features.find(feature =>
+        feature.properties.field_2 === nama
+    );
+}
+
+
+// -------------------------------------------------------------
+// Mendapatkan koordinat titik QGIS
+// -------------------------------------------------------------
+function getQgisPointCoordinate(feature) {
+
+    if (!feature || !feature.geometry) {
+        return null;
+    }
+
+    if (feature.geometry.type === 'Point') {
+        return feature.geometry.coordinates;
+    }
+
+    return null;
+}
+
+
+// -------------------------------------------------------------
+// Menampilkan rute pada WebGIS QGIS
+// -------------------------------------------------------------
+function showQgisRoute(pathCoordinates) {
+
+    if (!qgisMap) {
+        alert('Peta QGIS belum siap. Silakan tunggu beberapa detik.');
+        return;
+    }
+
+    // Hapus rute sebelumnya
+    if (qgisRouteLayer) {
+        qgisMap.removeLayer(qgisRouteLayer);
+        qgisRouteLayer = null;
+    }
+
+    const routeGeoJSON = {
+        type: 'Feature',
+        properties: {
+            nama: 'Rute Terpendek'
+        },
+        geometry: {
+            type: 'LineString',
+            coordinates: pathCoordinates
+        }
+    };
+
+    const qgisWindow =
+    document.getElementById('qgisWebGIS').contentWindow;
+
+qgisRouteLayer = qgisWindow.L.geoJSON(routeGeoJSON, {
+    style: {
+        color: '#000000',
+        weight: 5,
+        opacity: 0.9
+    }
+}).addTo(qgisMap); 
+
+    qgisMap.fitBounds(
+        qgisRouteLayer.getBounds(),
+        {
+            padding: [40, 40]
+        }
+    );
+}
+
+
+// -------------------------------------------------------------
+// TOMBOL TAMPILKAN RUTE
+// -------------------------------------------------------------
+document.getElementById('btnCalculateRoute').addEventListener('click', function () {
+
+    const originName =
+        document.getElementById('selectOrigin').value;
+
+    const destinationName =
+        document.getElementById('selectDestination').value;
+
+
+    // Validasi pilihan
+    if (!originName || !destinationName) {
+        alert('Silakan pilih Titik Asal dan Titik Tujuan terlebih dahulu.');
+        return;
+    }
+
+    if (originName === destinationName) {
+        alert('Titik asal dan titik tujuan tidak boleh sama.');
+        return;
+    }
+
+
+    const originFeature =
+        getQgisToponimiByName(originName);
+
+    const destinationFeature =
+        getQgisToponimiByName(destinationName);
+
+
+    if (!originFeature || !destinationFeature) {
+        alert('Data titik asal atau tujuan tidak ditemukan pada WebGIS QGIS.');
+        return;
+    }
+
+
+    const originCoord =
+        getQgisPointCoordinate(originFeature);
+
+    const destinationCoord =
+        getQgisPointCoordinate(destinationFeature);
+
+
+    if (!originCoord || !destinationCoord) {
+        alert('Koordinat titik asal atau tujuan tidak valid.');
+        return;
+    }
+
+
+    // ---------------------------------------------------------
+    // Ambil jaringan jalan dari QGIS
+    // ---------------------------------------------------------
+
+    const iframe =
+        document.getElementById('qgisWebGIS');
+
+    const qgisWindow =
+        iframe.contentWindow;
+
+    const roadData =
+        qgisWindow.json_jalan_4;
+
+
+    if (!roadData || !roadData.features.length) {
+        alert('Data jaringan jalan QGIS tidak ditemukan.');
+        return;
+    }
+
+
+    console.log(
+        'Jumlah ruas jalan QGIS:',
+        roadData.features.length
+    );
+
+
+    // ---------------------------------------------------------
+    // Bangun graph jaringan jalan QGIS
+    // ---------------------------------------------------------
+
+    const qgisGraph =
+        buildRoadGraph(roadData);
+
+
+    const graphNodeCount =
+        Object.keys(qgisGraph).length;
+
+
+    console.log(
+        'Jumlah node jaringan:',
+        graphNodeCount
+    );
+
+
+    if (graphNodeCount === 0) {
+        alert('Jaringan jalan tidak memiliki node yang dapat dianalisis.');
+        return;
+    }
+
+
+    // ---------------------------------------------------------
+    // Cari node jalan terdekat dari Origin dan Destination
+    // ---------------------------------------------------------
+
+    const nearestOrigin =
+        findNearestRoadNode(
+            qgisGraph,
+            originCoord
+        );
+
+
+    const nearestDestination =
+        findNearestRoadNode(
+            qgisGraph,
+            destinationCoord
+        );
+
+
+    console.log(
+        'Node terdekat Origin:',
+        nearestOrigin
+    );
+
+    console.log(
+        'Node terdekat Destination:',
+        nearestDestination
+    );
+
+
+    // ---------------------------------------------------------
+    // Jalankan Dijkstra
+    // ---------------------------------------------------------
+
+    const result =
+        dijkstra(
+            qgisGraph,
+            nearestOrigin.key,
+            nearestDestination.key
+        );
+console.log('=== HASIL CEK KONEKSI ===');
+console.log('Origin node:', nearestOrigin.key);
+console.log('Destination node:', nearestDestination.key);
+console.log('Hasil Dijkstra:', result);
+
+    if (!result) {
+        alert(
+            'Rute tidak ditemukan. Kemungkinan jaringan jalan belum terkoneksi.'
+        );
+        return;
+    }
+
+
+    console.log(
+        'Rute ditemukan:',
+        result
+    );
+
+
+    // ---------------------------------------------------------
+    // Ubah path node menjadi koordinat
+    // ---------------------------------------------------------
+
+    const routeCoordinates =
+        result.path.map(
+            key => qgisGraph[key].coord
+        );
+
+
+    // Tambahkan titik origin dan destination
+    routeCoordinates.unshift(originCoord);
+    routeCoordinates.push(destinationCoord);
+
+
+    // ---------------------------------------------------------
+    // Tampilkan rute di WebGIS QGIS
+    // ---------------------------------------------------------
+
+    showQgisRoute(routeCoordinates);
+
+
+    // ---------------------------------------------------------
+    // Hitung jarak tambahan Origin → jaringan
+    // dan jaringan → Destination
+    // ---------------------------------------------------------
+
+    const totalDistance =
+        result.distance +
+        nearestOrigin.distance +
+        nearestDestination.distance;
+
+
+    const distanceMeterResult =
+        Math.round(totalDistance);
+
+
+    // Asumsi kecepatan rata-rata 25 km/jam
+    const speedKmh = 25;
+
+    const timeMinutes =
+        (distanceMeterResult / 1000) /
+        speedKmh *
+        60;
+
+
+    // ---------------------------------------------------------
+    // Tampilkan kartu hasil
+    // ---------------------------------------------------------
+
+    document
+        .getElementById('routeResultCard')
+        .classList.remove('hidden');
+
+
+    document
+        .getElementById('resRouteTitle')
+        .innerText =
+        `${originName} ➔ ${destinationName}`;
+
+
+    document
+        .getElementById('resRouteDistance')
+        .innerText =
+        `${distanceMeterResult.toLocaleString()} meter`;
+
+
+    document
+        .getElementById('resRouteTime')
+        .innerText =
+        `${timeMinutes.toFixed(1)} menit`;
+
+
+    document
+        .getElementById('resRouteAccess')
+        .innerText =
+        'Berdasarkan Jaringan Jalan QGIS';
+
+
+    console.log(
+        'Rute terpendek:',
+        distanceMeterResult,
+        'meter'
+    );
+
+});
+
+
+// -------------------------------------------------------------
+// TOMBOL HAPUS RUTE
+// -------------------------------------------------------------
+document.getElementById('btnClearRoute').addEventListener('click', function () {
+
+    if (qgisMap && qgisRouteLayer) {
+
+        qgisMap.removeLayer(qgisRouteLayer);
+
+        qgisRouteLayer = null;
+    }
+
+    document
+        .getElementById('routeResultCard')
+        .classList.add('hidden');
+
+});
+
+        // -------------------------------------------------------------
+        // PERHITUNGAN STATISTIK OTOMATIS
+        // -------------------------------------------------------------
+        function updateStatistics() {
+            const countToponimi = titikToponimiGeoJSON.features.length;
+            const countRoad = jaringanJalanGeoJSON.features.length;
+
+            let totalLengthM = 0;
+            jaringanJalanGeoJSON.features.forEach(f => {
+                totalLengthM += f.properties.panjang_m || 0;
+            });
+            const totalKm = (totalLengthM / 1000).toFixed(2);
+
+            document.getElementById('statToponimiCount').innerText = countToponimi;
+            document.getElementById('statRoadCount').innerText = countRoad;
+            document.getElementById('statRoadLength').innerText = `${totalKm} km`;
+        }
+        updateStatistics();
+
+        // -------------------------------------------------------------
+// KONTROL VISIBILITAS LAYER CHECKBOX
+// -------------------------------------------------------------
+
+// Jaringan Jalan Desa
+document.getElementById('layerJalanToggle').addEventListener('change', function() {
+
+    const iframe = document.getElementById('qgisWebGIS');
+
+    if (!iframe || !iframe.contentWindow) {
+        return;
+    }
+
+    const qgisWindow = iframe.contentWindow;
+    const jalanLayer = qgisWindow.layer_jalan_4;
+
+    if (!qgisMap || !jalanLayer) {
+        return;
+    }
+
+    if (this.checked) {
+        qgisMap.addLayer(jalanLayer);
+    } else {
+        qgisMap.removeLayer(jalanLayer);
+    }
+
+});
+
+        // -------------------------------------------------------------
+// INSPEKTOR KOORDINAT (HOVER & KLIK PETA)
+// -------------------------------------------------------------
+const coordLat = document.getElementById('coordLat');
+const coordLng = document.getElementById('coordLng');
+
+let clickMarker = null;
+
+document.getElementById('qgisWebGIS').addEventListener('load', function () {
+    const qgisWindow = this.contentWindow;
+    const qgisMapLocal = qgisWindow.map;
+    const LLocal = qgisWindow.L;
+
+    if (!qgisMapLocal || !LLocal) {
+        console.warn('Peta QGIS belum berhasil terhubung.');
+        return;
+    }
+
+    // Menampilkan koordinat saat kursor bergerak
+    qgisMapLocal.on('mousemove', function (e) {
+        coordLat.innerText = e.latlng.lat.toFixed(6);
+        coordLng.innerText = e.latlng.lng.toFixed(6);
+    });
+
+    // Menampilkan koordinat saat peta diklik
+    qgisMapLocal.on('click', function (e) {
+        coordLat.innerText = e.latlng.lat.toFixed(6);
+        coordLng.innerText = e.latlng.lng.toFixed(6);
+
+        // Hapus titik klik sebelumnya
+        if (clickMarker) {
+            qgisMapLocal.removeLayer(clickMarker);
+        }
+
+        // Buat titik pada lokasi yang diklik
+        clickMarker = LLocal.circleMarker(e.latlng, {
+            radius: 5,
+            color: '#3b82f6',
+            fillColor: '#60a5fa',
+            fillOpacity: 0.9,
+            weight: 2
+        }).addTo(qgisMapLocal);
+    });
+});
+
+        // -------------------------------------------------------------
+        // FITUR PENCARIAN FASILITAS / TOPONIMI
+        // -------------------------------------------------------------
+        const searchInput = document.getElementById('searchToponimi');
+        const searchSuggestions = document.getElementById('searchSuggestions');
+        const btnClearToponimi = document.getElementById('btnClearToponimi');
+
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            searchSuggestions.innerHTML = '';
+
+            if (query.length > 0) {
+                btnClearToponimi.classList.remove('hidden');
+                searchSuggestions.classList.remove('hidden');
+
+               const qgisData = document.getElementById('qgisWebGIS')
+    ?.contentWindow?.json_TOPONIMIfixacc_3;
+
+const matches = qgisData
+    ? qgisData.features
+        .map(feature => ({
+            name: feature.properties.field_2 || '',
+            alamat: feature.properties.field_5 || '',
+            feature: feature
+        }))
+        .filter(item =>
+            item.name.toLowerCase().includes(query) ||
+            item.alamat.toLowerCase().includes(query)
+        )
+    : [];
+
+                if (matches.length > 0) {
+                    matches.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = "p-2 bg-white hover:bg-blue-50 border border-slate-200 rounded cursor-pointer transition flex items-center justify-between";
+                        div.innerHTML = `
+                            <div>
+                                <span class="font-semibold text-slate-800 block text-xs">${item.name}</span>
+                                <span class="text-[10px] text-slate-500">${item.alamat}</span>
+                            </div>
+                            <i class="fa-solid fa-arrow-right text-blue-600 text-xs"></i>
+                        `;
+                        div.addEventListener('click', () => {
+    const qgisFeature = getQgisToponimiByName(item.name);
+    const koordinat = getQgisPointCoordinate(qgisFeature);
+
+    if (!qgisMap || !koordinat) {
+        console.warn('Lokasi fasilitas tidak ditemukan di WebGIS QGIS.');
+        return;
+    }
+
+    // Koordinat GeoJSON = [Longitude, Latitude]
+    qgisMap.setView(
+        [koordinat[1], koordinat[0]],
+        17
+    );
+
+    searchSuggestions.classList.add('hidden');
+});
+                        searchSuggestions.appendChild(div);
+                    });
+                } else {
+                    searchSuggestions.innerHTML = '<div class="p-2 text-slate-400 text-center bg-white rounded border border-slate-200">Fasilitas tidak ditemukan</div>';
+                }
+            } else {
+                btnClearToponimi.classList.add('hidden');
+                searchSuggestions.classList.add('hidden');
+            }
+        });
+
+        btnClearToponimi.addEventListener('click', () => {
+            searchInput.value = '';
+            btnClearToponimi.classList.add('hidden');
+            searchSuggestions.classList.add('hidden');
+        });
+
+        // -------------------------------------------------------------
+        // TABS & TOMBOL AKSI CEPAT
+        // -------------------------------------------------------------
+        const tabBtnAnalisis = document.getElementById('tabBtnAnalisis');
+        const tabBtnLayer = document.getElementById('tabBtnLayer');
+        const tabBtnInfo = document.getElementById('tabBtnInfo');
+
+        const tabContentAnalisis = document.getElementById('tabContentAnalisis');
+        const tabContentLayer = document.getElementById('tabContentLayer');
+        const tabContentInfo = document.getElementById('tabContentInfo');
+       
+        function switchTab(activeBtn, activeContent) {
+
+    [tabBtnAnalisis, tabBtnLayer, tabBtnInfo].forEach(btn => {
+        if (!btn) return;
+
+        btn.classList.remove(
+            'border-blue-600',
+            'text-blue-700',
+            'bg-white'
+        );
+
+        btn.classList.add('border-transparent');
+    });
+
+    [
+        tabContentAnalisis,
+        tabContentLayer,
+        tabContentInfo
+    ].forEach(cnt => {
+        if (!cnt) return;
+
+        cnt.classList.add('hidden');
+    });
+
+    if (activeBtn) {
+        activeBtn.classList.add(
+            'border-blue-600',
+            'text-blue-700',
+            'bg-white'
+        );
+
+        activeBtn.classList.remove('border-transparent');
+    }
+
+    if (activeContent) {
+        activeContent.classList.remove('hidden');
+    }
+}
+
+        tabBtnAnalisis.addEventListener('click', () => switchTab(tabBtnAnalisis, tabContentAnalisis));
+        tabBtnLayer.addEventListener('click', () => switchTab(tabBtnLayer, tabContentLayer));
+        tabBtnInfo.addEventListener('click', () => switchTab(tabBtnInfo, tabContentInfo));
+
+        console.log('TEST INFO:', {
+    tombol: tabBtnInfo,
+    panel: tabContentInfo
+});
+
+// Tombol Reset View
+document.getElementById('btnResetView').onclick = function () {
+    if (qgisMap) {
+        qgisMap.setView([-5.554185, 105.242686], 13);
+    } else {
+        alert('WebGIS belum siap.');
+    }
+};
+
+// Tombol Zoom Seluruh Wilayah
+document.getElementById('btnFitAll').onclick = function () {
+    if (qgisMap) {
+        qgisMap.fitBounds([
+            [-5.570105123542451, 105.21835988544389],
+            [-5.538266179360238, 105.26701282534458]
+        ], {
+            padding: [30, 30]
+        });
+    } else {
+        alert('WebGIS belum siap.');
+    }
+};
+        // Tombol Layar Penuh (Fullscreen)
+        document.getElementById('btnFullscreen').addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                document.exitFullscreen().catch(() => {});
+            }
+        });
+
+        /**
+         * ========================================================================
+         * DOKUMENTASI UNTUK MAHASISWA GEOMATIKA: CARA MEMUAT DATA EXTERNAL
+         * ========================================================================
+         * Bila Anda ingin memuat data dari folder 'data/':
+         * 
+         * async function loadExternalGeoJSON() {
+         *     try {
+         *         const resJalan = await fetch('data/jalan.geojson');
+         *         const jalanData = await resJalan.json();
+         *         L.geoJSON(jalanData).addTo(map);
+         *     } catch (err) {
+         *         console.warn("CORS Error jika dibuka via file:// - Gunakan local server.");
+         *     }
+         * }
+         * ========================================================================
+         */
+    </script>
+</body>
+</html>
