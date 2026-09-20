@@ -13,6 +13,67 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
+
+    /* ==========================================
+       ANIMASI SCROLL REVEAL
+       ========================================== */
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    .scroll-reveal {
+      opacity: 0;
+      transform: translateY(45px);
+      transition:
+        opacity 0.8s ease,
+        transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: opacity, transform;
+    }
+
+    .scroll-reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .scroll-reveal.from-left {
+      transform: translateX(-45px);
+    }
+
+    .scroll-reveal.from-right {
+      transform: translateX(45px);
+    }
+
+    .scroll-reveal.from-left.visible,
+    .scroll-reveal.from-right.visible {
+      transform: translateX(0);
+    }
+
+    .scroll-reveal.delay-1 {
+      transition-delay: 0.12s;
+    }
+
+    .scroll-reveal.delay-2 {
+      transition-delay: 0.24s;
+    }
+
+    .scroll-reveal.delay-3 {
+      transition-delay: 0.36s;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      .scroll-reveal,
+      .scroll-reveal.from-left,
+      .scroll-reveal.from-right {
+        opacity: 1;
+        transform: none;
+        transition: none;
+      }
+    }
     /* Grid geospasial */
     .geo-grid {
       background-size: 40px 40px;
@@ -267,7 +328,7 @@
     <div class="max-w-5xl mx-auto">
 
       <!-- JUDUL -->
-      <div class="text-center mb-16">
+      <div class="text-center mb-16 scroll-reveal">
 
         <div
           class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-300 text-xs font-medium mb-5"
@@ -303,7 +364,7 @@
 
       <!-- TENTANG WEBGIS -->
       <div
-        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8"
+        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8 scroll-reveal"
       >
 
         <h3 class="text-xl font-bold text-white mb-5">
@@ -348,7 +409,7 @@
       <div class="grid md:grid-cols-2 gap-8 mb-8">
 
         <div
-          class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8"
+          class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 scroll-reveal from-left"
         >
 
           <h3 class="text-xl font-bold text-white mb-5">
@@ -367,7 +428,7 @@
 
 
         <div
-          class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8"
+          class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 scroll-reveal from-right"
         >
 
           <h3 class="text-xl font-bold text-white mb-5">
@@ -388,7 +449,7 @@
 
       <!-- ANALISIS AKSESIBILITAS -->
       <div
-        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8"
+        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8 scroll-reveal"
       >
 
         <h3 class="text-xl font-bold text-white mb-5">
@@ -420,7 +481,7 @@
 
       <!-- CARA MEMBACA PETA -->
       <div
-        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8"
+        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8 scroll-reveal"
       >
 
         <h3 class="text-xl font-bold text-white mb-5">
@@ -450,7 +511,7 @@
 
       <!-- JARINGAN JALAN -->
       <div
-        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8"
+        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8 scroll-reveal"
       >
 
         <h3 class="text-xl font-bold text-white mb-5">
@@ -481,7 +542,7 @@
 
       <!-- FITUR WEBGIS -->
       <div
-        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8"
+        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8 scroll-reveal"
       >
 
         <h3 class="text-xl font-bold text-white mb-6">
@@ -491,7 +552,7 @@
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
           <div
-            class="p-5 rounded-xl bg-slate-950/60 border border-slate-800"
+            class="p-5 rounded-xl bg-slate-950/60 border border-slate-800 scroll-reveal delay-1"
           >
             <h4 class="font-semibold text-white mb-2">
               Peta Interaktif
@@ -505,7 +566,7 @@
 
 
           <div
-            class="p-5 rounded-xl bg-slate-950/60 border border-slate-800"
+            class="p-5 rounded-xl bg-slate-950/60 border border-slate-800 scroll-reveal delay-2"
           >
             <h4 class="font-semibold text-white mb-2">
               Jaringan Jalan
@@ -519,7 +580,7 @@
 
 
           <div
-            class="p-5 rounded-xl bg-slate-950/60 border border-slate-800"
+            class="p-5 rounded-xl bg-slate-950/60 border border-slate-800 scroll-reveal delay-3"
           >
             <h4 class="font-semibold text-white mb-2">
               Infrastruktur
@@ -566,7 +627,7 @@
 
       <!-- MANFAAT -->
       <div
-        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8"
+        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8 scroll-reveal"
       >
 
         <h3 class="text-xl font-bold text-white mb-5">
@@ -599,7 +660,7 @@
 
       <!-- METODOLOGI -->
       <div
-        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8"
+        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8 scroll-reveal"
       >
 
         <h3 class="text-xl font-bold text-white mb-5">
@@ -630,7 +691,7 @@
 
       <!-- TENTANG PROYEK -->
       <div
-        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8"
+        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8 scroll-reveal"
       >
 
         <h3 class="text-xl font-bold text-white mb-5">
@@ -669,7 +730,7 @@
 
       <!-- CATATAN -->
       <div
-        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8"
+        class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8 scroll-reveal"
       >
 
         <h3 class="text-xl font-bold text-white mb-5">
@@ -703,7 +764,7 @@
 
       <!-- PENGEMBANG -->
       <div
-        class="text-center py-10 border-t border-slate-800"
+        class="text-center py-10 border-t border-slate-800 scroll-reveal"
       >
 
         <h3 class="text-xl font-bold text-white mb-4">
@@ -755,6 +816,38 @@
 
       window.location.href = './dashboard.html';
 
+    }
+
+
+    // ==========================================
+    // SCROLL REVEAL
+    // ==========================================
+
+    const revealElements = document.querySelectorAll('.scroll-reveal');
+
+    if ('IntersectionObserver' in window) {
+      const revealObserver = new IntersectionObserver(
+        (entries, observer) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        {
+          threshold: 0.12,
+          rootMargin: '0px 0px -60px 0px'
+        }
+      );
+
+      revealElements.forEach((element) => {
+        revealObserver.observe(element);
+      });
+    } else {
+      revealElements.forEach((element) => {
+        element.classList.add('visible');
+      });
     }
 
   </script>
